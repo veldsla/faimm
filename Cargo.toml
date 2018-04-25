@@ -1,0 +1,8 @@
+[package]
+name = "indexed_fasta_reader"
+version = "0.1.0"
+authors = ["Arno Velds <a.velds@nki.nl>"]
+
+[dependencies]
+memmap = "0.6"
+
