@@ -21,7 +21,7 @@
 //!
 //! # Performance
 //! Calculating the gc content of target regions of an exome (231_410 regions) on the Human
-//! reference (GRCh38) takes about 0.7 seconds, slightly faster than bedtools (0.9s probably a more
+//! reference (GRCh38) takes about 0.7 seconds (warm cache), slightly faster than bedtools (0.9s probably a more
 //! sound implementation) and rust-bio (1.3s same implementation as example)
 //!
 extern crate memmap;
@@ -190,23 +190,6 @@ impl IndexedFastaReader {
 
 /// A view of a slice of the fasta file bounded by provided coordinates
 pub struct FastaView<'a>(&'a [u8]);
-/// An iterator over the bases (as `u8`, so `b'C'`, `b'G'`, etc) in a `FastaView`.
-pub struct Bases<'a>(std::slice::Iter<'a, u8>);
-
-impl<'a> Iterator for Bases<'a> {
-    type Item = u8;
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(&b) = self.0.next() {
-            if b == b'\r' || b == b'\n' {
-                self.next()
-            } else {
-                Some(b)
-            }
-        } else {
-            None
-        }
-    }
-}
 
 impl<'a> FastaView<'a> {
     /// Count the occurences of A, C, G, T, N, and other in the current view. This function does
@@ -233,15 +216,15 @@ impl<'a> FastaView<'a> {
 
     /// Iterator over the bases in the current view. Bases are returned as `u8` representations of
     /// the `char`s in the fasta file.
-    pub fn bases(&self) -> Bases {
-        Bases(self.0.iter())
+    pub fn bases(&self) -> impl Iterator<Item=&'a u8> {
+        self.0.iter().filter(|&&b| b != b'\n' && b != b'\r')
     }
 }
 
-/// Returns a newly allocated, utf-validated string with the sequence data in `Self`
+/// Returns a newly allocated, utf8-validated string with the sequence data in `Self`
 impl<'a> ToString for FastaView<'a> {
     fn to_string(&self) -> String {
-        String::from_utf8(self.bases().collect()).unwrap()
+        String::from_utf8(self.bases().cloned().collect()).unwrap()
     }
 }
 
