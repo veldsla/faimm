@@ -53,8 +53,10 @@ impl Fai {
         for l in br.lines() {
             let line = l?;
             let p: Vec<_> = line.split('\t').collect();
-            //FIXME provide custom errors
-            assert_eq!(p.len(), 5);
+
+            if p.len() != 5 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected 5 columns in .fai file."));
+            }
 
             name_map.insert(p[0].to_owned(), chromosomes.len());
 
