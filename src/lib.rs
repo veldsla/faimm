@@ -1,4 +1,4 @@
-//! This crate provides an indexed fasta reader that uses a memory mapped file to read the sequence
+//! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
 //! bases per line separated by (sometimes platform-specific) newlines you cannot directly use the
@@ -7,7 +7,7 @@
 //! Access is provided using a view of the mmap using zero-based base coordinates. This view can
 //! then be used to iterate over bases (represented as `u8`) or parsed into a string.
 //!
-//! Access to the sequence data doesn't require the `IndexedFastaReader` to be mutable. This makes
+//! Access to the sequence data doesn't require the `IndexedFasta` to be mutable. This makes
 //! it easy to share.
 //!
 //! # Example
@@ -21,7 +21,7 @@
 //!
 //! # Performance
 //! Calculating the gc content of target regions of an exome (231_410 regions) on the Human
-//! reference (GRCh38) takes about 0.7 seconds (warm cache), slightly faster than bedtools (0.9s probably a more
+//! reference (GRCh38) takes about 0.7 seconds (warm cache), slightly faster than bedtools nuc (0.9s probably a more
 //! sound implementation) and rust-bio (1.3s same implementation as example)
 //!
 extern crate memmap;
@@ -29,7 +29,7 @@ extern crate memmap;
 use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, Read, BufRead, BufReader};
 
 use memmap::{MmapOptions, Mmap};
 
@@ -139,13 +139,13 @@ pub struct FaiRecord {
     line_width: usize,
 }
 
-/// The `IndexFastaReader` can be used to open a fasta file that has a valid .fai index file.
-pub struct IndexedFastaReader {
+/// The `IndexFasta` can be used to open a fasta file that has a valid .fai index file.
+pub struct IndexedFasta {
     mmap: Mmap,
     fasta_index: Fai
 }
 
-impl IndexedFastaReader {
+impl IndexedFasta {
     /// Open a fasta file from path `P`. It is assumed that it has a valid .fai index file. The
     /// .fai file is created by appending .fai to the fasta file.
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
@@ -155,7 +155,7 @@ impl IndexedFastaReader {
 
         let file = File::open(path)?;
         let mmap = unsafe { MmapOptions::new().map(&file)? };
-        Ok(IndexedFastaReader { mmap, fasta_index })
+        Ok(IndexedFasta { mmap, fasta_index })
     }
 
     /// Use tid, start and end to calculate a slice on the Fasta file. Use this view to iterate
@@ -230,6 +230,23 @@ impl<'a> ToString for FastaView<'a> {
     }
 }
 
+impl<'a> Read for FastaView<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let mut read = 0;
+        let mut skipped = 0;
+        for (b, (s, t)) in buf.iter_mut()
+            .zip(self.0.iter().enumerate()
+                .filter(|&(_, &c)| c !=  b'\n' && c != b'\r'))
+        {
+            *b = *t;
+            read +=1;
+            skipped = s;
+        }
+        self.0 = &self.0[(skipped + 1)..];
+        Ok(read)
+    }
+}
+
 /// Object that contains count occurences of the most common bases in DNA genome references: A, C, G,
 /// T, N and other.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -255,7 +272,7 @@ mod tests {
 
     #[test]
     fn open() {
-        let ir = IndexedFastaReader::from_file("test/genome.fa").unwrap();
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         assert_eq!(ir.fai().names().len(), 3);
         assert_eq!(ir.fai().tid("ACGT-25"), Some(2));
         assert_eq!(ir.fai().tid("NotFound"), None);
@@ -263,7 +280,7 @@ mod tests {
 
     #[test]
     fn view() {
-        let ir = IndexedFastaReader::from_file("test/genome.fa").unwrap();
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         assert_eq!(ir.view(0, 0, 10).unwrap().to_string(), "AAAAAAAAAA");
         assert!(ir.view(0, 0, 11).is_err());
 
@@ -273,7 +290,7 @@ mod tests {
 
     #[test]
     fn view_tid() {
-        let ir = IndexedFastaReader::from_file("test/genome.fa").unwrap();
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         assert_eq!(ir.view_tid(0).unwrap().to_string(),
             "AAAAAAAAAA");
         assert_eq!(ir.view_tid(1).unwrap().to_string(),
@@ -285,19 +302,41 @@ mod tests {
 
     #[test]
     fn view_bases() {
-        let ir = IndexedFastaReader::from_file("test/genome.fa").unwrap();
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         let v = ir.view(2, 48, 52).unwrap();
         let mut b = v.bases();
-        assert_eq!(b.next(), Some(b'C'));
-        assert_eq!(b.next(), Some(b'C'));
-        assert_eq!(b.next(), Some(b'G'));
-        assert_eq!(b.next(), Some(b'G'));
+        assert_eq!(b.next(), Some(&b'C'));
+        assert_eq!(b.next(), Some(&b'C'));
+        assert_eq!(b.next(), Some(&b'G'));
+        assert_eq!(b.next(), Some(&b'G'));
         assert_eq!(b.next(), None);
     }
 
     #[test]
     fn view_counts() {
-        let ir = IndexedFastaReader::from_file("test/genome.fa").unwrap();
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         assert_eq!(ir.view(2, 48, 52).unwrap().count_bases(), BaseCounts {c:2,g:2, ..Default::default()});
+    }
+
+    #[test]
+    fn read_view() {
+        let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
+        let mut buf = vec![0; 25];
+        let mut v = ir.view_tid(2).unwrap();
+        println!("{}", v.to_string());
+        assert_eq!(v.read(&mut buf).unwrap(), 25);
+        assert_eq!(buf, vec![b'A'; 25]);
+        assert_eq!(v.read(&mut buf).unwrap(), 25);
+        assert_eq!(buf, vec![b'C'; 25]);
+        assert_eq!(v.read(&mut buf).unwrap(), 25);
+        assert_eq!(buf, vec![b'G'; 25]);
+
+        let mut buf2 = vec![0; 10];
+        assert_eq!(v.read(&mut buf2).unwrap(), 10);
+        assert_eq!(buf2, vec![b'T'; 10]);
+        assert_eq!(v.read(&mut buf2).unwrap(), 10);
+        assert_eq!(buf2, vec![b'T'; 10]);
+        assert_eq!(v.read(&mut buf2).unwrap(), 5);
+        assert_eq!(&buf2[0..5], vec![b'T'; 5].as_slice());
     }
 }
