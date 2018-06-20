@@ -244,15 +244,19 @@ impl<'a> Read for FastaView<'a> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut read = 0;
         let mut skipped = 0;
-        for (b, (s, t)) in buf.iter_mut()
-            .zip(self.0.iter().enumerate()
-                .filter(|&(_, &c)| c !=  b'\n' && c != b'\r'))
+        for (t, s) in buf.iter_mut()
+            .zip(self.0.iter().filter(|&&c| {
+                let base = c !=  b'\n' && c != b'\r';
+                if !base {
+                    skipped += 1;
+                }
+                base
+            }))
         {
-            *b = *t;
+            *t = *s;
             read +=1;
-            skipped = s;
         }
-        self.0 = &self.0[(skipped + 1)..];
+        self.0 = &self.0[(skipped + read)..];
         Ok(read)
     }
 }
