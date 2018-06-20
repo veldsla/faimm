@@ -121,6 +121,15 @@ impl Fai {
         self.name_map.get(name).cloned()
     }
 
+    /// Return the index of a chromosome in the fasta index.
+    ///
+    /// Returns the size in bases as usize.
+    pub fn size(&self, tid: usize) -> io::Result<usize> {
+        let chr = &self.chromosomes.get(tid)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Chromomsome tid was out of bounds"))?;
+        Ok(chr.len)
+    }
+
     /// Return the names chromosomes in the fasta index in no particular order use `Fai::tid` to
     /// map to index.
     ///
