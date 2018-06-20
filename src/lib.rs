@@ -25,20 +25,21 @@
 //! sound implementation) and rust-bio (1.3s same implementation as example)
 //!
 extern crate memmap;
+extern crate indexmap;
 
-use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
 use std::io::{self, Read, BufRead, BufReader};
 
 use memmap::{MmapOptions, Mmap};
+use indexmap::IndexMap;
 
 /// The object that stores the parsed fasta index file. You can use it to map chromosome names to
 /// indexes and lookup offsets for chr-start:end coordinates
 #[derive(Debug, Clone)]
 pub struct Fai {
     chromosomes: Vec<FaiRecord>,
-    name_map: HashMap<String, usize>
+    name_map: IndexMap<String, usize>
 }
 
 impl Fai {
@@ -47,7 +48,7 @@ impl Fai {
         let f = File::open(path)?;
         let br = BufReader::new(f);
 
-        let mut name_map = HashMap::new();
+        let mut name_map = IndexMap::new();
         let mut chromosomes = Vec::new();
 
         for l in br.lines() {
