@@ -226,10 +226,34 @@ impl<'a> FastaView<'a> {
         bc
     }
 
+    pub fn count_bases_2(&self) -> BaseCounts {
+        let mut bc: BaseCounts = Default::default();
+
+        for b in self.0.iter().filter(|&&b| b & 192 == 64) {
+            let v:u8 = b << 3;
+            if v ^ 8 == 0 {
+                bc.a += 1;
+            } else if v ^ 24 == 0 {
+                bc.c += 1;
+            } else if v ^ 56 == 0 {
+                bc.g += 1;
+            } else if v ^ 112 == 0 {
+                bc.n += 1;
+            } else if v ^ 160 == 0 {
+                bc.t += 1;
+            } else {
+                bc.other += 1;
+             }
+        }
+
+        bc
+    }
+
     /// Iterator over the bases in the current view. Bases are returned as `u8` representations of
-    /// the `char`s in the fasta file.
+    /// the `char`s in the fasta file. Keep only that chars between 164 and 128 (effectively
+    /// skipping newlines)
     pub fn bases(&self) -> impl Iterator<Item=&'a u8> {
-        self.0.iter().filter(|&&b| b != b'\n' && b != b'\r')
+        self.0.iter().filter(|&&b| b & 192 == 64)
     }
 }
 
@@ -246,7 +270,7 @@ impl<'a> Read for FastaView<'a> {
         let mut skipped = 0;
         for (t, s) in buf.iter_mut()
             .zip(self.0.iter().filter(|&&c| {
-                let base = c !=  b'\n' && c != b'\r';
+                let base = c & 192 == 64;
                 if !base {
                     skipped += 1;
                 }
