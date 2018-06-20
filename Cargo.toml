@@ -5,4 +5,5 @@ authors = ["Arno Velds <a.velds@nki.nl>"]
 
 [dependencies]
 memmap = "0.6"
+indexmap = "1.0.1"
 
