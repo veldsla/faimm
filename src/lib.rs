@@ -13,7 +13,7 @@
 //!
 //! # Example
 //! ```
-//! use indexed_fasta_reader::IndexedFasta;
+//! use faimm::IndexedFasta;
 //! let fa = IndexedFasta::from_file("test/genome.fa").expect("Error opening fa");
 //! let chr_index = fa.fai().tid("ACGT-25").expect("Cannot find chr in index");
 //! let v = fa.view(chr_index,0,50).expect("Cannot get .fa view");
@@ -35,7 +35,7 @@
 //! Calculating the gc content of target regions of an exome (231_410 regions) on the Human
 //! reference (GRCh38) takes about 0.7 seconds (warm cache), slightly faster than bedtools nuc (0.9s probably a more
 //! sound implementation) and rust-bio (1.3s same implementation as example)
-//!
+//! Some tests show counting can also be improved using simd, but nothing has been released.
 extern crate memmap;
 extern crate indexmap;
 
