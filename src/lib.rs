@@ -5,12 +5,24 @@
 //! bytes available from the mmap.
 //!
 //! Access is provided using a view of the mmap using zero-based base coordinates. This view can
-//! then be used to iterate over bases (represented as `u8`) or parsed into a string.
+//! then be used to iterate over bases (represented as `u8`) or parsed into a string. Naive gc
+//! counting is also available.
 //!
 //! Access to the sequence data doesn't require the `IndexedFasta` to be mutable. This makes
 //! it easy to share.
 //!
 //! # Example
+//! ```
+//! use indexed_fasta_reader::IndexedFasta;
+//! let fa = IndexedFasta::from_file("test/genome.fa").expect("Error opening fa");
+//! let chr_index = fa.fai().tid("ACGT-25").expect("Cannot find chr in index");
+//! let v = fa.view(chr_index,0,50).expect("Cannot get .fa view");
+//! //count the bases
+//! let counts = v.count_bases();
+//! //or print the sequence
+//! println!("{}", v.to_string());
+//! ```
+//!
 //!
 //! # Alternatives
 //! [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta reader. The major
@@ -32,14 +44,14 @@ use std::fs::File;
 use std::io::{self, Read, BufRead, BufReader};
 
 use memmap::{MmapOptions, Mmap};
-use indexmap::IndexMap;
+use indexmap::IndexSet;
 
 /// The object that stores the parsed fasta index file. You can use it to map chromosome names to
 /// indexes and lookup offsets for chr-start:end coordinates
 #[derive(Debug, Clone)]
 pub struct Fai {
     chromosomes: Vec<FaiRecord>,
-    name_map: IndexMap<String, usize>
+    name_map: IndexSet<String>
 }
 
 impl Fai {
@@ -48,7 +60,7 @@ impl Fai {
         let f = File::open(path)?;
         let br = BufReader::new(f);
 
-        let mut name_map = IndexMap::new();
+        let mut name_map = IndexSet::new();
         let mut chromosomes = Vec::new();
 
         for l in br.lines() {
@@ -59,7 +71,7 @@ impl Fai {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "Expected 5 columns in .fai file."));
             }
 
-            name_map.insert(p[0].to_owned(), chromosomes.len());
+            name_map.insert(p[0].to_owned());
 
             let ioerr = |e, msg| {
                 io::Error::new(io::ErrorKind::InvalidData, format!("{}:{}", msg, e))
@@ -118,7 +130,7 @@ impl Fai {
     /// Returns the position of chr `name` if succesful, None otherwise.
     #[inline]
     pub fn tid(&self, name: &str) -> Option<usize> {
-        self.name_map.get(name).cloned()
+        self.name_map.get_full(name).and_then(|e| Some(e.0))
     }
 
     /// Return the index of a chromosome in the fasta index.
@@ -130,12 +142,18 @@ impl Fai {
         Ok(chr.len)
     }
 
-    /// Return the names chromosomes in the fasta index in no particular order use `Fai::tid` to
-    /// map to index.
+    /// Return the name of the chromomsome at index tid
+    pub fn name(&self, tid: usize) -> io::Result<&String> {
+        self.name_map.get_index(tid)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Chromomsome tid was out of bounds"))
+    }
+
+    /// Return the names of the chromosomes from the fasta index in the same order as in the
+    /// `.fai`. You can use `Fai::tid` to map it back to an index.
     ///
     /// Returns a `Vec<&str>` with the chromosome names.
-    pub fn names(&self) -> Vec<&str> {
-        self.name_map.keys().map(|s| s.as_ref()).collect()
+    pub fn names(&self) -> Vec<&String> {
+        self.name_map.iter().collect()
     }
 }
 
@@ -309,11 +327,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn open() {
+    fn fai() {
         let ir = IndexedFasta::from_file("test/genome.fa").unwrap();
         assert_eq!(ir.fai().names().len(), 3);
         assert_eq!(ir.fai().tid("ACGT-25"), Some(2));
         assert_eq!(ir.fai().tid("NotFound"), None);
+
+        assert_eq!(ir.fai().size(2).unwrap(), 100);
+        assert_eq!(ir.fai().name(2).unwrap(), "ACGT-25");
+        assert!(ir.fai().name(3).is_err());
     }
 
     #[test]
@@ -323,6 +345,7 @@ mod tests {
         assert!(ir.view(0, 0, 11).is_err());
 
         assert_eq!(ir.view(2, 38, 62).unwrap().to_string(), "CCCCCCCCCCCCGGGGGGGGGGGG");
+        assert_eq!(ir.view(2, 74, 100).unwrap().to_string(), "GTTTTTTTTTTTTTTTTTTTTTTTTT");
         assert!(ir.view(0, 120, 130).is_err());
     }
 
