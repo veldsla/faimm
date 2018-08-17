@@ -1,7 +1,13 @@
 [package]
 name = "faimm"
-version = "0.1.0"
+version = "0.1.0" # remember to update html_root_url
 authors = ["Arno Velds <a.velds@nki.nl>"]
+repository = "https://github.com/veldsla/faimm"
+homepage = "https://github.com/veldsla/faimm"
+documentation = "https://docs.rs/faimm/"
+keywords = ["fasta", "fai", "indexed"]
+categories = ["parser-implementations"]
+license = "MIT"
 
 [dependencies]
 memmap = "0.6"

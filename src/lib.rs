@@ -1,3 +1,4 @@
+#![doc(html_root_url = "https://docs.rs/faimm/0.1.0")]
 //! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
