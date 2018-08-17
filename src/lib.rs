@@ -27,6 +27,7 @@
 //! IUPAC converson or validation. Anything outside this range is silently skipped. This means that
 //! also invalid `fasta` will be parsed. The mere presence of an accompanying `.fai` provides the
 //! assumption of a valid fasta.
+//! Requires Rust >=1.26
 //!
 //! # Alternatives
 //! [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta reader. The major
