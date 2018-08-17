@@ -8,6 +8,7 @@ documentation = "https://docs.rs/faimm/"
 keywords = ["fasta", "fai", "indexed"]
 categories = ["parser-implementations"]
 license = "MIT"
+description = "Random access to indexed fasta using a mmapped file"
 
 [dependencies]
 memmap = "0.6"
