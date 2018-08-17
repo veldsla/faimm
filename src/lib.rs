@@ -22,7 +22,11 @@
 //! //or print the sequence
 //! println!("{}", v.to_string());
 //! ```
-//!
+//! # Limitations
+//! The parser uses a simple ascii mask for allowable characters (64..128), does not apply any
+//! IUPAC converson or validation. Anything outside this range is silently skipped. This means that
+//! also invalid `fasta` will be parsed. The mere presence of an accompanying `.fai` provides the
+//! assumption of a valid fasta.
 //!
 //! # Alternatives
 //! [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta reader. The major
@@ -229,25 +233,7 @@ impl<'a> FastaView<'a> {
     pub fn count_bases(&self) -> BaseCounts {
         let mut bc: BaseCounts = Default::default();
 
-        for b in self.0 {
-            match *b {
-                b'A' | b'a' => bc.a += 1,
-                b'C' | b'c' => bc.c += 1,
-                b'G' | b'g' => bc.g += 1,
-                b'T' | b't' => bc.t += 1,
-                b'N' | b'n' => bc.n += 1,
-                b'\n' | b'\r' => {},
-                _ => bc.other += 1,
-            }
-        }
-
-        bc
-    }
-
-    pub fn count_bases_2(&self) -> BaseCounts {
-        let mut bc: BaseCounts = Default::default();
-
-        for b in self.0.iter().filter(|&&b| b & 192 == 64) {
+        for b in self.bases() {
             let v:u8 = b << 3;
             if v ^ 8 == 0 {
                 bc.a += 1;
