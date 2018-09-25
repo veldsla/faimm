@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/faimm/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/faimm/0.2.0")]
 //! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
@@ -158,8 +158,8 @@ impl Fai {
     /// `.fai`. You can use `Fai::tid` to map it back to an index.
     ///
     /// Returns a `Vec<&str>` with the chromosome names.
-    pub fn names(&self) -> Vec<&String> {
-        self.name_map.iter().collect()
+    pub fn names(&self) -> Vec<&str> {
+        self.name_map.iter().map(|s| s.as_str()).collect()
     }
 }
 
