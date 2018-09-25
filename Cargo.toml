@@ -11,6 +11,6 @@ license = "MIT"
 description = "Random access to indexed fasta using a mmapped file"
 
 [dependencies]
-memmap = "0.6"
+memmap = "0.7"
 indexmap = "1.0.1"
 
