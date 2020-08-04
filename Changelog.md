@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] 2020-8-4
+- This is a maintenance release that has no API changes.
+- Updated indexmap allows for simplifications
+- Minimum rust version now 1.32.
+
 ## [0.2.0] - 2018-9-25
 - Fix Fai::names to return Vec<&str> instead of Vec<&String>
 - Updated memmap dependency

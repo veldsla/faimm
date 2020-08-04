@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/faimm/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/faimm/0.2.1")]
 //! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
@@ -28,7 +28,7 @@
 //! IUPAC converson or validation. Anything outside this range is silently skipped. This means that
 //! also invalid `fasta` will be parsed. The mere presence of an accompanying `.fai` provides the
 //! assumption of a valid fasta.
-//! Requires Rust >=1.26
+//! Requires Rust >=1.32
 //!
 //! # Alternatives
 //! [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta reader. The major
@@ -136,7 +136,7 @@ impl Fai {
     /// Returns the position of chr `name` if succesful, None otherwise.
     #[inline]
     pub fn tid(&self, name: &str) -> Option<usize> {
-        self.name_map.get_full(name).and_then(|e| Some(e.0))
+        self.name_map.get_index_of(name)
     }
 
     /// Return the index of a chromosome in the fasta index.
