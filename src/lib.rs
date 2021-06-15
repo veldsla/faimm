@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/faimm/0.2.1")]
+#![doc(html_root_url = "https://docs.rs/faimm/0.3.0")]
 //! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
@@ -42,14 +42,12 @@
 //! reference (GRCh38) takes about 0.7 seconds (warm cache), slightly faster than bedtools nuc (0.9s probably a more
 //! sound implementation) and rust-bio (1.3s same implementation as example)
 //! Some tests show counting can also be improved using simd, but nothing has been released.
-extern crate memmap;
-extern crate indexmap;
 
 use std::path::Path;
 use std::fs::File;
 use std::io::{self, Read, BufRead, BufReader};
 
-use memmap::{MmapOptions, Mmap};
+use memmap2::{MmapOptions, Mmap};
 use indexmap::IndexSet;
 
 /// The object that stores the parsed fasta index file. You can use it to map chromosome names to
