@@ -1,6 +1,6 @@
 [package]
 name = "faimm"
-version = "0.3.0" # remember to update html_root_url
+version = "0.4.0" # remember to update html_root_url
 authors = ["Arno Velds <a.velds@nki.nl>"]
 edition = "2018"
 repository = "https://github.com/veldsla/faimm"
@@ -12,6 +12,6 @@ license = "MIT"
 description = "Random access to indexed fasta using a mmapped file"
 
 [dependencies]
-memmap2 = "0.3"
-indexmap = "1.5.0"
+memmap2 = "0.7"
+indexmap = "2.0.0"
 

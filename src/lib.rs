@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/faimm/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/faimm/0.4.0")]
 //! This crate provides indexed fasta access by using a memory mapped file to read the sequence
 //! data. It is intended for accessing sequence data on genome sized fasta files and provides
 //! random access based on base coordinates. Because an indexed fasta file uses a limited number of
@@ -28,7 +28,7 @@
 //! IUPAC converson or validation. Anything outside this range is silently skipped. This means that
 //! also invalid `fasta` will be parsed. The mere presence of an accompanying `.fai` provides the
 //! assumption of a valid fasta.
-//! Requires Rust >=1.32
+//! Requires Rust >=1.64
 //!
 //! # Alternatives
 //! [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta reader. The major
@@ -289,7 +289,7 @@ impl<'a> Read for FastaView<'a> {
     }
 }
 
-/// Object that contains count occurences of the most common bases in DNA genome references: A, C, G,
+/// Object that contains count occurrences of the most common bases in DNA genome references: A, C, G,
 /// T, N and other.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BaseCounts {
