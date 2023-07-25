@@ -33,7 +33,7 @@ The parser uses a simple ASCII mask for allowable characters (64..128), does
 not apply any IUPAC conversion or validation. Anything outside this range is
 silently skipped. This means that also invalid `fasta` will be parsed. The mere
 presence of an accompanying `.fai` provides the assumption of a valid fasta.
-Requires Rust >=1.32
+Requires Rust >=1.64
 
 # Alternatives
 [Rust-bio](https://crates.io/crates/bio) provides a competent indexed fasta
