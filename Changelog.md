@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] 2024-04-9
+- Updated memmap2 dependency
+- Switched to editon 2021 (no code changes)
+
 ## [0.4.0] 2023-07-21
 - Updated depencies
 - MSRV is now Rust 1.64 (minimum for indexmap)
